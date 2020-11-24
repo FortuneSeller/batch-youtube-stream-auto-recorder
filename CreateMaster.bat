@@ -1,5 +1,9 @@
+@foo.bar >NUL 2>&1
 @ECHO OFF
-SETLOCAL ENABLEDELAYEDEXPANSION
+@setlocal enableextensions ENABLEDELAYEDEXPANSION
+@pushd %~dp0
+chcp 65001
+
 
 REM creats the subfolders with a custome streamRec.bat for each one
 
@@ -8,22 +12,27 @@ for /f "tokens=2 delims=:" %%i in ('type Channel.txt^|find "https://"') do (
 set "id=%%i"
 set "id=!id:~26!"
 
-mkdir !id!
-cd !id!
+FOR /F "delims==" %%A IN ('youtube-dl.exe --playlist-end 1 --no-warnings --get-filename -o "%%(uploader)s" "https://www.youtube.com/channel/!id!"') DO SET channelname=%%A
+
+set channelname=!channelname: =_!
+mkdir "!channelname!"
+pushd %~dp0"!channelname!"
+set name=%~dp0!channelname!\!channelname!
 
 (
-echo @ECHO off
+echo @foo.bar >NUL 2>&1
+echo @ECHO OFF
+echo @setlocal enableextensions
+echo @pushd %%~dp0
 echo :again
-echo SET MYDATE=20%%DATE:~8,4%%-%%DATE:~3,2%%-%%DATE:~0,2%%_%%time:~0,2%%-%%time:~3,2%%-%%%time:~6,2%%
-UC1opHUrw8rvnsadT-iGp7Cg
-echo streamlink "https://www.youtube.com/embed/live_stream?channel=!id!" best --retry-streams 30 --hls-live-edge 99999 --hls-segment-threads 10 -o "%%MYDATE%%.flv"
-echo ffmpeg  -i "%%MYDATE%%.flv" -vcodec copy -acodec copy "%%MYDATE%%c.mkv"
-echo if not errorlevel 1 if exist "%filename%.mkv" del /q "%%MYDATE%%.flv"
+echo streamlink "https://www.youtube.com/embed/live_stream?channel=!id!" best --retry-streams 15 --hls-live-edge 99999 --hls-segment-threads 10 -o "!name!_[%%MYDATE%%].flv"
+echo ffmpeg  -y -i "!name!_[%%MYDATE%%].flv" -vcodec copy -acodec copy "!name!_[%%MYDATE%%].mp4"
+echo if not errorlevel 1 if exist "!name!_[%%MYDATE%%].mp4" del /q "!name!_[%%MYDATE%%].flv"
 echo timeout /t 300 /nobreak > NUL
 echo goto again
 echo EXIT
 )>streamRec.bat
-cd ..
+popd
 )
 
 
